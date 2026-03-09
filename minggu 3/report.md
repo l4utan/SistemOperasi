@@ -24,7 +24,7 @@ echo "=== Selesai ==="
 echo "Hasil disimpan di: large-logs.txt"
 echo "Error (jika ada) disimpan di: error.log"
 ```
-![script](img/lat31sript.png "Script yang dibuat")
+![script](img/lat31script.png "Script yang dibuat")
 
 * Hasil di terminal
 ![hasil](img/lat31terminal.png "Hasil di terminal")
