@@ -191,7 +191,7 @@ pwd
 ![langkah2](img/lat1lang2boot.png "Langkah No. 2")
 
 3. Telusuri direkoty /dev. Identifikasi perangkat yang tersedia. Identifikasi tty (terminal) Anda (ketik who am i); siapa pemilik tty Anda (gunakan ls -l)
-![langkah3](img/lat1lang3.png "Langkah No. 3)
+![langkah3](img/lat1lang3.png "Langkah No. 3")
 
 4. Telusuri directory /proc. Tampilkan isi file interrupts, devices, cpuinfo, meminfo dan uptime menggunakan perintah cat. Dapatkah anda melihat mengapa directory /proc disebut pseudo-filesystem yang memungkinkan akses ke struktu data kernel?
 * interrupts
