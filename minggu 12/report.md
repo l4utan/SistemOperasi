@@ -1,284 +1,320 @@
-# Laporan Praktikum Sistem Operasi Jobsheet 11
+# Laporan Praktikum Sistem Operasi Jobsheet 12
 
 <h4>Nama : Surya Sadikin Firdaus<h4>
 <h4>NIM : 254107020105<h4>
 <h4>Kelas : TI-1H<h4>
 
-## Praktikum 1 -  Permissions
-1. Buat direktori kerja dan dua file uji:
+## Praktikum 1 -  Amati Layaan Aktif Saat Boot
+1. Lihat semua layanan yang sedang berjalan.
 ```
-mkdir ~/lab-permissions && cd ~/lab-permissions
-echo "data rahasia" > secret.txt
-echo '#!/bin/bash' > myscript.sh
-echo 'echo Hello' >> myscript.sh
-ls -la
+systemctl list-units --type=service --state=running
+# catat berapa banyak layanan yang aktif
 ```
 ![steps](img/prak1lang1.png "Langkah ke-1")
 
-2. Jadikan secret.txt privat hanya untuk owner:
+2. Lihat semua unit service yang ada (aktif maupun tidak).
 ```
-chmod 600 secret.txt
-ls -l secret.txt
+systemctl list-unit-files --type=service | head -30
+# enabled = akan start otomatis saat boot
+# disabled = tidak start otomatis, bisa dijalankan manual
+# static = tidak bisa di-enable/disable, hanya dipanggil oleh layanan lain
 ```
 ![steps](img/prak1lang2.png "Langkah ke-2")
 
-3. Jadikan myscript.sh dapat dijalankan:
+3. Analisis waktu boot dan temukan layanan paling lambat.
 ```
-chmod 755 myscript.sh
-ls -l myscript.sh
-./myscript.sh
+systemd-analyze
+systemd-analyze blame | head -15
 ```
 ![steps](img/prak1lang3.png "Langkah ke-3")
 
-4. Buat direktori bersama dan amati efek SGID sederhana:
-```
-mkdir shared-dir
-chmod g+s shared-dir
-ls -ld shared-dir
-```
-![steps](img/prak1lang4.png "Langkah ke-4")
 
-5. Uji efek umask pada file baru:
+## Praktikum 2 - Kelola Layanan SSH
+1. Periksa status SSH secara menyeluruh:
 ```
-umask
-umask 027
-touch testfile-027
-ls -l testfile-027
-```
-![steps](img/prak1lang5.png "Langkah ke-5")
-
-### Pertanyaan Latihan 9.1
-1. Mengapa secret.txttidak dapat dibaca oleh group dan others setelah chmod 600?
-2. Apa perbedaan arti 600dan 755terhadap file yang diuji?
-3. Setelah umask 027, permission apa yang dihasilkan untuk file baru, dan mengapa bukan 777?
-
-### Jawaban Latihan 9.1
-![jawaban](img/lat1.png "Jawaban")
-
-
-## Praktikum 2 - ACL
-1. Siapkan file dan lihat permission standar tanpa ACL tambahan:
-```
-mkdir ~/lab-acl && cd ~/lab-acl
-echo "Data penting" > confidential.txt
-chmod 640 confidential.txt
-ls -l confidential.txt
-getfacl confidential.txt
+systemctl status ssh
+systemctl is-active ssh
+systemctl is-enabled ssh
 ```
 ![steps](img/prak2lang1.png "Langkah ke-1")
 
-2. Beri akses baca ke satu user tertentu tanpa mengubah owner atau group:
+2. Lakukan restart dan pantau perubahannya:
 ```
-setfacl -m u:userA:r confidential.txt
-ls -l confidential.txt
-getfacl confidential.txt
+sudo systemctl restart ssh
+systemctl status ssh
+# perhatikan: Loaded, Active, dan Main PID bisa berubah setelah restart
 ```
 ![steps](img/prak2lang2.png "Langkah ke-2")
 
-3. Buat direktori bersama yang mewariskan ACL ke file baru:
+3. Lihat dependensi SSH:
 ```
-mkdir shared
-setfacl -d -m u:userA:rwx shared
-setfacl -d -m u:userB:r-x shared
-getfacl shared
-
-touch shared/inherited.txt
-getfacl shared/inherited.txt
+systemctl list-dependencies ssh
+# layanan lain yang harus aktif sebelum SSH bisa berjalan
 ```
 ![steps](img/prak2lang3.png "Langkah ke-3")
 
-### Pertanyaan Latihan 9.2
-1. Mengapa getfacl confidential.txtawalnya tidak menampilkan user tertentu?
-2. Setelah setfacl -m u:userA:r confidential.txt, apa perbedaan output ls -ldan getfacl?
-3. Mengapa file inherited.txtmewarisi ACL dari direktori shared?
-
-### Jawaban Latihan 9.2
-![jawaban](img/codekalkulator.png "Code")
-![jawaban](img/hasilkalkulator.png "Hasil")
-
-
-## Praktikum 3A - Membuat dan Mengelola User
+4. Cek semua unit yang gagal di sistem:
 ```
-nano ~/praktikum-os/week09/scripts/grading-batch.sh
+systemctl --failed
+# jika ada, ini adalah daftar layanan yang butuh perhatian
+```
+![steps](img/prak2lang4.png "Langkah ke-4")
+
+
+## Praktikum 3 - Membuat dan Mengelola User
+1.  Siapkan konten yang akan dilayani.
+```
+cd ~/lab-os/chapter10-services
+mkdir -p situs-demo
+nano situs-demo/index.html
+# Tulis isi berkas berikut
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Halo dari layanan systemd kustom!</h1>
+<p>Layanan ini dibuat pada praktek Bab 10.</p>
+</body>
+</html>
 ```
 ![steps](img/prak3lang1.png "Langkah ke-1")
 
-2. Ketik isi berikut: 
+2. Buat skrip wrapper untuk server HTTP. 
 ```
-# buat dua user
-sudo useradd -m -s /bin/bash userA
-sudo useradd -m -s /bin/bash userB
-sudo passwd userA
-sudo passwd userB
-
-# verifikasi
-id userA
-getent passwd userA
-
-# modifikasi shell userA
-sudo usermod -s /bin/zsh userA
-getent passwd userA
-
-# lock dan unlock userB
-sudo usermod -L userB
-sudo passwd -S userB
-sudo usermod -U userB
-sudo passwd -S userB
+nano ~/lab-os/chapter10-services/jalankan-server.sh
+# Tulis isi berkas berikut
+#!/bin/bash
+DIREKTORI="$HOME/lab-os/chapter10-services/situs-demo"
+PORT=9090
+echo "Memulai server di port $PORT..."
+exec python3 -m http.server $PORT --directory "$DIREKTORI"
+chmod +x ~/lab-os/chapter10-services/jalankan-server.sh
 ```
-![steps](img/prak3a.png "Langkah Praktikum 3A")
+![steps](img/prak3lang2.png "Langkah ke-2")
 
-### Pertanyaan Praktikum 3A
-1. Apa perbedaan output id userAsebelum dan sesudah menambah group?
-2. Bagaimana status passwd -S userBberubah saat akun di-lock?
-
-### Jawaban Praktikum 3A
-![answer](img/modgrading.png "Modifikasi grading-batch.sh")
-
-
-## Praktikum 3B - Group Management
+3. Buat berkas unit systemd untuk layanan ini.
 ```
-# buat dua group
-sudo groupadd labgroup
-sudo groupadd readonly-group
+nano ~/lab-os/chapter10-services/demo-web.service
+# Tulis isi berkas berikut
+[Unit]
+Description=Demo Web Server Praktek Bab 10
+After=network.target
 
-# tambahkan userA ke kedua group
-sudo usermod -aG labgroup,readonly-group userA
+[Service]
+Type=simple
+User=nama-pengguna-kamu
+WorkingDirectory=/home/nama-pengguna-kamu/lab-os/chapter10-services/
+situs-demo
+ExecStart=/usr/bin/python3 -m http.server 9090
+Restart=on-failure
+RestartSec=3s
 
-# tambahkan userB hanya ke readonly-group
-sudo usermod -aG readonly-group userB
+[Install]
+WantedBy=multi-user.target
 
-# verifikasi
-id userA
-id userB
-getent group labgroup
-getent group readonly-group
+# salin ke lokasi unit systemd
+sudo cp ~/lab-os/chapter10-services/demo-web.service /etc/systemd/
+system/demo-web.service
+# minta systemd membaca ulang berkas unit yang baru dibuat
+sudo systemctl daemon-reload
 ```
-![steps](img/prak3B.png "Langkah Praktikum 3B")
+![steps](img/prak3lang3.png "Langkah ke-3")
 
-### Pertanyaan Praktikum 3B
-1. Apa yang ditampilkan id userAvs groups userA?
-2. Mengapa -apada usermod -aGpenting?
-
-### Jawaban Praktikum 3B
-![answer](img/fungConfirm.png "Fungsi Konfirmasi")
-![answer](img/scriptDemo.png "Script Demo")
-![answer](img/implementasi.png "Percobaan pengunaan script dan fungsi")
-
-## Praktikum 3C - Script Backup dengan Opsi
+4. Jalankan layanan dan verifikasi.
 ```
-# set aging policy untuk userA
-sudo chage -M 60 -W 7 -m 1 userA
-sudo chage -l userA
-
-# paksa userA ganti password saat login pertama
-sudo chage -d 0 userA
-
-# kunci password userB
-sudo passwd -l userB
-sudo passwd -S userB
-
-# unlock kembali
-sudo passwd -u userB
-sudo passwd -S userB
+sudo systemctl start demo-web
+systemctl status demo-web
+# coba akses layanan
+curl http://localhost:9090
 ```
-![steps](img/prak3C.png "Langkah Praktikum 3C")
+![steps](img/prak3lang4.png "Langkah ke-4")
 
-### Pertanyaan Praktikum 3C
-1. Apa arti nilai yang ditampilkan chage -l userA?
-2. Bagaimana cara membuktikan userB terkunci dari output passwd -S?
-3. Kapan sebaiknya menggunakan chage -d 0vs passwd -e?
-
-### Jawaban Praktikum 3B
-![answer](img/fungConfirm.png "Fungsi Konfirmasi")
-![answer](img/scriptDemo.png "Script Demo")
-![answer](img/implementasi.png "Percobaan pengunaan script dan fungsi")
-
-
-## Praktikum 4: Konfigurasi sudo
-1. Buat file konfigurasi sudo khusus untuk userA.
+5. Uji fitur restart otomatis.
 ```
-sudo visudo -f /etc/sudoers.d/lab-userA
-```
+# lihat PID proses saat ini
+systemctl status demo-web | grep "Main PID"
 
-Perintah ini membuka editor aman khusus untuk file sudoers baru. Jika sintaks salah, visudo akan memperingatkan sebelum file disimpan.
-Isi file dengan aturan berikut:
-```
-userA ALL=(root) NOPASSWD: /usr/bin/apt update, /usr/bin/apt
-upgrade
-userA ALL=(root) /bin/systemctl status *
-```
-![steps](img/prak4lang1.png "Langkah ke-1")
+# hentikan proses secara paksa (simulasi crash)
+sudo kill -9 $(systemctl show demo-web --property=MainPID --value)
 
-2. Verifikasi aturan yang aktif dan uji hasilnya:
+# tunggu beberapa detik lalu cek -- systemd harus menghidupkannya
+kembali
+sleep 5
+systemctl status demo-web
+# PID akan berubah karena proses baru dijalankan
 ```
-sudo -l -U userA
-sudo grep "userA" /var/log/auth.log | tail -10
+![steps](img/prak3lang5.png "Langkah ke-5")
+
+6. Bersihkan layanan uji setelah selesai.
 ```
-![steps](img/prak4lang2.png "Langkah ke-2")
-
-### Pertanyaan Analisis 
-1. Mengapa aturan disimpan di /etc/sudoers.d//, bukan langsung di /etc/sudoers?
-2. Mana perintah yang bisa dijalankan tanpa password, dan mana yang masih perlu autentikasi?
-3. Informasi apa saja yang dicatat di log sudo?
-
-### Jawaban Analisis
-![steps](img/modDebug.png "Modifikasi script debug-latihan.sh")
+sudo systemctl disable --now demo-web
+sudo rm /etc/systemd/system/demo-web.service
+sudo systemctl daemon-reload
+```
+![steps](img/prak3lang6.png "Langkah ke-6")
 
 
-## Praktikum 5: Disk Quota
-1. Buat image filesystem kecil dan mount dengan opsi quota.
+## Praktikum 4 - Filter dan Analisis Log Layanan
+1. Lihat log SSH dari satu jam terakhir.
 ```
-sudo dd if=/dev/zero of=/tmp/quota-test.img bs=1M count=100
-sudo mkfs.ext4 /tmp/quota-test.img
-sudo mkdir -p /mnt/quota-test
-sudo mount -o loop,usrquota,grpquota /tmp/quota-test.img /mnt/quota-test
+journalctl -u ssh --since "1 hour ago" --no-pager
+# jika tidak ada log SSH, gunakan layanan lain yang aktif
+journalctl -u cron --since "1 hour ago" --no-pager
+```
+![steps](img/prak4lang1.png "Lankah ke-1")
+
+2. Filter log berprioritas error ke atas
+```
+journalctl -b -p err --no-pager
+# ini menampilkan semua error dan yang lebih serius sejak boot
+```
+![steps](img/prak4lang2.png "Lankah ke-2")
+
+3. Ikuti log secara real-time sambil memicu aktivitas.
+```
+# jalankan di terminal pertama:
+journalctl -u ssh -f
+
+# di terminal kedua, coba login SSH ke localhost
+# ssh localhost
+# lalu lihat apa yang muncul di terminal pertama
+```
+![steps](img/prak4lang3.png "Lankah ke-3")
+
+4. Ekstrak log ke berkas untuk analisis.
+```
+cd ~/lab-os/chapter10-services
+
+# simpan semua log layanan ssh dari hari ini ke berkas
+journalctl -u ssh --since today --no-pager > log-ssh-hari-ini.txt
+
+# hitung jumlah baris log
+wc -l log-ssh-hari-ini.txt
+
+# jika ada, cari baris yang mengandung kata "error" atau "failed"
+grep -i "error\|failed" log-ssh-hari-ini.txt | head -20
+```
+![steps](img/prak4lang4.png "Lankah ke-4")
+
+
+## Praktikum 5 - Konfigurasi SSH Server
+1. Periksa konfigurasi SSH saat ini.
+```
+sudo grep -n "^Port\|^#Port" /etc/ssh/sshd_config
+ss -tlnp | grep ssh
 ```
 ![steps](img/prak5lang1.png "Langkah ke-1")
 
-2. Buat database quota dan aktifkan enforcement.
+2. Buat backup dan ubah port SSH
 ```
-sudo quotacheck -cug /mnt/quota-test
-sudo quotaon -v /mnt/quota-test
-sudo repquota /mnt/quota-test
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.lab12
+
+# ubah port dari 22 ke 2222 (atau port lain yang belum dipakai)
+sudo sed -i 's/^#Port 22/Port 2222/' /etc/ssh/sshd_config
+# jika baris Port 22 tidak dikomentari:
+# sudo sed -i 's/^Port 22/Port 2222/' /etc/ssh/sshd_config
+
+# verifikasi perubahan
+grep "^Port" /etc/ssh/sshd_config
 ```
 ![steps](img/prak5lang2.png "Langkah ke-2")
 
-3. Tetapkan quota untuk user uji dan amati hasilnya.
+3.  Validasi konfigurasi dan restart layanan.
 ```
-sudo edquota -u userA
-# contoh: soft block 5120, hard block 10240
-sudo repquota /mnt/quota-test
+# WAJIB: validasi sintaks sebelum restart
+sudo sshd -t
+echo "Kode keluar sshd -t: $?"
+# kode 0 berarti sintaks valid
+
+# restart layanan
+sudo systemctl restart ssh
+systemctl status ssh
 ```
 ![steps](img/prak5lang3.png "Langkah ke-3")
 
-4.  Bersihkan lingkungan uji setelah selesai.
+4. Verifikasi port baru dengan ss.
 ```
-sudo quotaoff /mnt/quota-test
-sudo umount /mnt/quota-test
-sudo rm /tmp/quota-test.img
+ss -tlnp | grep ssh
+# seharusnya menampilkan port 2222, bukan 22
+
+# simpan hasil ke berkas bukti
+ss -tlnp | grep ssh > ~/lab-os/chapter10-services/bukti-port-ssh.txt
+cat ~/lab-os/chapter10-services/bukti-port-ssh.txt
 ```
 ![steps](img/prak5lang4.png "Langkah ke-4")
 
-### Pertanyaan Analisis 
-1. Apa perbedaan soft limit dan hard limit saat quota mulai terlampaui?
-2. Mengapa praktikum ini memakai loopback filesystem, bukan langsung /home/?
-3. Dari output repquota, informasi apa yang menunjukkan quota sudah aktif?
-
-### Jawaban Analisis
-![steps](img/modDebug.png "Modifikasi script debug-latihan.sh")
+5. Kembalikan port SSH ke 22 setelah praktek.
+```
+sudo cp /etc/ssh/sshd_config.backup.lab12 /etc/ssh/sshd_config
+sudo sshd -t
+sudo systemctl restart ssh
+ss -tlnp | grep ssh
+# harus kembali ke port 22
+```
+![steps](img/prak5lang5.png "Langkah ke-5")
 
 
 ## Latihan
-- Latihan 9.A — Audit dan Kolaborasi
-1. Temukan file SUID aktif dengan find / -perm -4000 -type f 2>/dev/null, lalu jelaskan
-tiga file yang Anda kenali beserta alasannya.
-2. Cari direktori world-writable dan tentukan mana yang valid dan mana yang berisiko.
-3. Rancang konfigurasi permission standar dan ACL untuk direktori proyek /srv/webapp/ agar
-group webapp-teamdapat menulis, user deployhanya membaca, dan file baru selalu mewarisi
-group proyek.
-![steps](img/penggunaanAbsensi.png "Contoh penggunaan")
+### Latihan 10.1 Audit Layanan dan Analisis Boot
+Lakukan audit menyeluruh terhadap layanan yang berjalan di sistem.
+1. Jalankan systemctl list-units –type=service –state=running dan catat semua layanan aktif. Pilih tiga layanan yang kamu kenal, periksa status masing-masing dengan systemctl status, dan jelaskan fungsinya.
+2. Jalankan systemd-analyze blame dan identifikasi lima layanan dengan waktu inisialisasi terlama. Tampilkan hasilnya menggunakan pipeline: systemd-analyze blame | head -5.
+3. Jalankan systemctl –faileddan dokumentasikan hasilnya. Jika ada layanan yang gagal, cari tahu penyebabnya dengan journalctl -u nama-layanan -n 30.
+### Jawaban 10.1
+1. Tiga layanan aktif:
+    - ssh.service — menerima koneksi remote via SSH.
+    - cron.service — menjalankan scheduled task otomatis.
+    - rsyslog.service — mencatat system log ke file.
+2. Lima layanan terlama boot:
+    - fwupd-refresh.service — 19.574s
+    - e2scrub_reap.service — 18.916s
+    - snapd.seeded.service — 18.068s
+    - snapd.service — 17.182s
+    - apport.service — 12.409s
+3. systemctl --failed — tidak ada layanan gagal. Sistem berjalan normal.
+
+### Latihan 10.2 Layanan Kustom dengan Restart Otomatis
+Buat layanan systemd kustom yang mendemonstrasikan fitur restart otomatis.
+1. Buat skrip Bash (referensi Bab 7) bernama monitor-disk.shyang setiap 30 detik menuliskan penggunaan disk ke berkas log. Gunakan df -hdan date.
+2. Buat berkas unit /etc/systemd/system/monitor-disk.serviceuntuk menjalankan skrip tersebut dengan konfigurasi: Restart=always, RestartSec=5s, dan berjalan sebagai pengguna kamu sendiri.
+3. Aktifkan dan jalankan layanan. Verifikasi dengan systemctl statusdan pastikan log masuk ke journal.
+4. Simulasikan crash dengan membunuh proses secara paksa (kill -9), tunggu 10 detik, dan verifikasi bahwa layanan hidup kembali secara otomatis.
+5. Bersihkan: nonaktifkan layanan dan hapus berkas unit setelah selesai.
+### Jawaban 10.2
+isi script bash:
+```
+#!/bin/bash
+while true; do
+    echo "=== $(date) ===" >> ~/disk-monitor.log
+    df -h >> ~/disk-monitor.log
+    sleep 30
+done
+```
+
+isi services:
+```[Unit]
+Description=Monitor Disk Usage
+
+[Service]
+Type=simple
+User=laut
+ExecStart=/home/laut/monitor-disk.sh
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+```
+![answer](img/monitorDisk.png "Output monitor-disk.sh")
 
 
-- Latihan 9.B — Kebijakan Akun dan Quota
-Tuliskan langkah untuk membuat user intern, menambahkannya ke group labgroup, memaksa pergantian password tiap 45 hari (warning 7 hari), memberi izin sudo hanya untuk systemctl status, dan menetapkan quota ruang serta inode sederhana pada /home/.
-![steps](img/healthcheck.png "Contoh penggunaan")
+### Latihan 10.3 Investigasi Log dan Keamaan SSH
+Analisis log sistem dan tingkatkan keamanan konfigurasi SSH.
+1. Gunakan journalctl -b -p err untuk menemukan semua error sejak boot terakhir. Simpan hasilnya ke berkas dan hitung jumlah baris dengan wc -l.
+2. Lakukan tiga perubahan keamanan pada /etc/ssh/sshd_config: tambahkan PermitRootLogin no, MaxAuthTries 3, dan LoginGraceTime 30. Ikuti alur aman: backup, edit, validasi sshd -t, reload.
+3. Setelah reload, verifikasi tiga hal: layanan masih berjalan (systemctl status ssh), port masih mendengarkan (ss -tlnp | grep ssh), dan konfigurasi baru terbaca (grep -E "PermitRoot|MaxAuth|GraceTime" /etc/ssh/sshd_config).
+4. Kembalikan konfigurasi SSH ke kondisi semula menggunakan berkas backup.
+### Jawaban 10.1
+1. ![answer](img/lat3no1.png "Jawaban")
+2. ![answer](img/lat3no2.png "Jawaban")
+3. ![answer](img/lat3no3.png "Jawaban")
+3. ![answer](img/lat3no4.png "Jawaban")
