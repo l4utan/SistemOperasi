@@ -280,11 +280,12 @@ tiga file yang Anda kenali beserta alasannya.
     - /usr/bin/sudo — menjalankan perintah sebagai root dengan otorisasi.
     - /usr/bin/passwd — mengubah password meski /etc/shadow milik root.
     - /usr/bin/su — switch user membutuhkan akses file shadow.
-2. Valid (by design):
+2. - Valid (by design):
     - /tmp dan /var/tmp — direktori temporary, memang world-writable.
     - /dev/shm, /dev/mqueue — shared memory, wajar world-writable.
     - /tmp/.X11-unix, /tmp/.font-unix, dll — socket runtime, normal.
-   Perlu diwaspadai:
+   
+- Perlu diwaspadai:
     - /run/screen — berisiko jika ada user tidak terpercaya di sistem.
     - /var/crash — seharusnya tidak world-writable, cek permission-nya:
 3. ![steps](img/lat9a3.png "Output konfigurasi")
