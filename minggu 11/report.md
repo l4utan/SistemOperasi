@@ -122,7 +122,7 @@ sudo passwd -S userB
 sudo usermod -U userB
 sudo passwd -S userB
 ```
-![steps](img/prak3a.png "Langkah Praktikum 3A")
+![steps](img/prak3A.png "Langkah Praktikum 3A")
 
 ### Pertanyaan Praktikum 3A
 1. Apa perbedaan output id userA sebelum dan sesudah menambah group?
