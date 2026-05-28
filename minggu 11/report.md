@@ -276,6 +276,7 @@ tiga file yang Anda kenali beserta alasannya.
 ![steps](img/lat9a1.png "Output find")
 ![steps](img/lat9a2.png "Output find")
 
+- Jawaban
 1. Tiga file SUID dari sistem:
     - /usr/bin/sudo — menjalankan perintah sebagai root dengan otorisasi.
     - /usr/bin/passwd — mengubah password meski /etc/shadow milik root.
@@ -294,6 +295,7 @@ tiga file yang Anda kenali beserta alasannya.
 - Latihan 9.B — Kebijakan Akun dan Quota
 Tuliskan langkah untuk membuat user intern, menambahkannya ke group labgroup, memaksa pergantian password tiap 45 hari (warning 7 hari), memberi izin sudo hanya untuk systemctl status, dan menetapkan quota ruang serta inode sederhana pada /home/.
 
+- Jawaban
 1. Buat user dan tambah ke group:
 ```
 sudo useradd -m -s /bin/bash intern
