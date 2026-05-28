@@ -90,7 +90,7 @@ getfacl shared/inherited.txt
 ![steps](img/prak2lang3.png "Langkah ke-3")
 
 ### Pertanyaan Latihan 9.2
-1. Mengapa getfacl confidential.txtawalnya tidak menampilkan user tertentu?
+1. Mengapa getfacl confidential.txt awalnya tidak menampilkan user tertentu?
 2. Setelah setfacl -m u:userA:r confidential.txt, apa perbedaan output ls -ldan getfacl?
 3. Mengapa file inherited.txtmewarisi ACL dari direktori shared?
 
@@ -100,12 +100,6 @@ getfacl shared/inherited.txt
 
 
 ## Praktikum 3A - Membuat dan Mengelola User
-```
-nano ~/praktikum-os/week09/scripts/grading-batch.sh
-```
-![steps](img/prak3lang1.png "Langkah ke-1")
-
-2. Ketik isi berikut: 
 ```
 # buat dua user
 sudo useradd -m -s /bin/bash userA
@@ -130,12 +124,12 @@ sudo passwd -S userB
 ![steps](img/prak3a.png "Langkah Praktikum 3A")
 
 ### Pertanyaan Praktikum 3A
-1. Apa perbedaan output id userAsebelum dan sesudah menambah group?
-2. Bagaimana status passwd -S userBberubah saat akun di-lock?
+1. Apa perbedaan output id userA sebelum dan sesudah menambah group?
+2. Bagaimana status passwd -S userB berubah saat akun di-lock?
 
 ### Jawaban Praktikum 3A
-![answer](img/modgrading.png "Modifikasi grading-batch.sh")
-
+1. Tidak ada perbedaan untuk id userA
+2. Setelah usermod -L, output passwd -S userB menampilkan field L (Locked). Setelah usermod -U, field berubah jadi P (Password active).
 
 ## Praktikum 3B - Group Management
 ```
@@ -162,9 +156,8 @@ getent group readonly-group
 2. Mengapa -apada usermod -aGpenting?
 
 ### Jawaban Praktikum 3B
-![answer](img/fungConfirm.png "Fungsi Konfirmasi")
-![answer](img/scriptDemo.png "Script Demo")
-![answer](img/implementasi.png "Percobaan pengunaan script dan fungsi")
+1. id userA menampilkan uid, gid, dan semua group. groups userA hanya menampilkan nama group saja.
+2. Flag -a mencegah group lama terhapus. Tanpa -a, usermod -G menimpa semua supplementary group.
 
 ## Praktikum 3C - Script Backup dengan Opsi
 ```
@@ -190,10 +183,10 @@ sudo passwd -S userB
 2. Bagaimana cara membuktikan userB terkunci dari output passwd -S?
 3. Kapan sebaiknya menggunakan chage -d 0vs passwd -e?
 
-### Jawaban Praktikum 3B
-![answer](img/fungConfirm.png "Fungsi Konfirmasi")
-![answer](img/scriptDemo.png "Script Demo")
-![answer](img/implementasi.png "Percobaan pengunaan script dan fungsi")
+### Jawaban Praktikum 3C
+1. chage -l userA menampilkan: password expired date, last change, minimum 1 hari ganti password, maximum 60 hari, warning 7 hari sebelum expired.
+2. Field ke-2 output passwd -S userB menunjukkan L, artinya password terkunci.
+3. chage -d 0 memaksa ganti password di login berikutnya. passwd -e efeknya sama, tapi lebih portabel antar distro.
 
 
 ## Praktikum 4: Konfigurasi sudo
@@ -205,8 +198,7 @@ sudo visudo -f /etc/sudoers.d/lab-userA
 Perintah ini membuka editor aman khusus untuk file sudoers baru. Jika sintaks salah, visudo akan memperingatkan sebelum file disimpan.
 Isi file dengan aturan berikut:
 ```
-userA ALL=(root) NOPASSWD: /usr/bin/apt update, /usr/bin/apt
-upgrade
+userA ALL=(root) NOPASSWD: /usr/bin/apt update, /usr/bin/apt upgrade
 userA ALL=(root) /bin/systemctl status *
 ```
 ![steps](img/prak4lang1.png "Langkah ke-1")
@@ -224,7 +216,9 @@ sudo grep "userA" /var/log/auth.log | tail -10
 3. Informasi apa saja yang dicatat di log sudo?
 
 ### Jawaban Analisis
-![steps](img/modDebug.png "Modifikasi script debug-latihan.sh")
+1. File di /etc/sudoers.d/ modular dan aman. Edit /etc/sudoers langsung berisiko merusak seluruh konfigurasi sudo.
+2. Tanpa password: /usr/bin/apt update dan /usr/bin/apt upgrade. Perlu autentikasi: /bin/systemctl status *.
+3. Log mencatat: timestamp, hostname, user yang menjalankan, TTY, working directory, target user, dan perintah lengkap.
 
 
 ## Praktikum 5: Disk Quota
@@ -267,7 +261,9 @@ sudo rm /tmp/quota-test.img
 3. Dari output repquota, informasi apa yang menunjukkan quota sudah aktif?
 
 ### Jawaban Analisis
-![steps](img/modDebug.png "Modifikasi script debug-latihan.sh")
+1. Soft limit memberi grace period 7 hari sebelum diblokir. Hard limit langsung memblokir tanpa toleransi.
+2. Loopback aman untuk praktikum, tidak merusak /home asli jika ada kesalahan konfigurasi.
+3. Kolom soft dan hard menunjukkan nilai limit aktif. Jika masih 0, quota belum aktif.
 
 
 ## Latihan
@@ -275,12 +271,57 @@ sudo rm /tmp/quota-test.img
 1. Temukan file SUID aktif dengan find / -perm -4000 -type f 2>/dev/null, lalu jelaskan
 tiga file yang Anda kenali beserta alasannya.
 2. Cari direktori world-writable dan tentukan mana yang valid dan mana yang berisiko.
-3. Rancang konfigurasi permission standar dan ACL untuk direktori proyek /srv/webapp/ agar
-group webapp-teamdapat menulis, user deployhanya membaca, dan file baru selalu mewarisi
-group proyek.
-![steps](img/penggunaanAbsensi.png "Contoh penggunaan")
+3. Rancang konfigurasi permission standar dan ACL untuk direktori proyek /srv/webapp/ agar group webapp-team dapat menulis, user deploy hanya membaca, dan file baru selalu mewarisi group proyek.
+![steps](img/lat9a1.png "Output find")
+![steps](img/lat9a2.png "Output find")
+
+1. Tiga file SUID dari sistem:
+    - /usr/bin/sudo — menjalankan perintah sebagai root dengan otorisasi.
+    - /usr/bin/passwd — mengubah password meski /etc/shadow milik root.
+    - /usr/bin/su — switch user membutuhkan akses file shadow.
+2. Valid (by design):
+    - /tmp dan /var/tmp — direktori temporary, memang world-writable.
+    - /dev/shm, /dev/mqueue — shared memory, wajar world-writable.
+    - /tmp/.X11-unix, /tmp/.font-unix, dll — socket runtime, normal.
+   Perlu diwaspadai:
+    - /run/screen — berisiko jika ada user tidak terpercaya di sistem.
+    - /var/crash — seharusnya tidak world-writable, cek permission-nya:
+3. ![steps](img/lat9a3.png "Output konfigurasi")
 
 
 - Latihan 9.B — Kebijakan Akun dan Quota
 Tuliskan langkah untuk membuat user intern, menambahkannya ke group labgroup, memaksa pergantian password tiap 45 hari (warning 7 hari), memberi izin sudo hanya untuk systemctl status, dan menetapkan quota ruang serta inode sederhana pada /home/.
-![steps](img/healthcheck.png "Contoh penggunaan")
+
+1. Buat user dan tambah ke group:
+```
+sudo useradd -m -s /bin/bash intern
+sudo passwd intern
+sudo usermod -aG labgroup intern
+```
+2. Set password aging:
+```
+sudo chage -M 45 -W 7 intern
+```
+
+3. Sudo khusus systemctl status:
+```
+sudo visudo -f /etc/sudoers.d/lab-intern
+```
+isinya: 
+```
+intern ALL=(root) NOPASSWD: /bin/systemctl status *
+```
+4. Setup loopback untuk quota:
+```
+sudo dd if=/dev/zero of=/quota-intern.img bs=1M count=100
+sudo mkfs.ext4 /quota-intern.img
+sudo mkdir -p /mnt/quota-intern
+sudo mount -o loop,usrquota /quota-intern.img /mnt/quota-intern
+sudo quotacheck -cug /mnt/quota-intern
+sudo quotaon -v /mnt/quota-intern
+```
+5. Set quota:
+```
+sudo edquota -u intern
+```
+Isi soft 5120, hard 10240, inode soft 100, hard 150.
