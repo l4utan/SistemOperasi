@@ -95,8 +95,9 @@ getfacl shared/inherited.txt
 3. Mengapa file inherited.txtmewarisi ACL dari direktori shared?
 
 ### Jawaban Latihan 9.2
-![jawaban](img/codekalkulator.png "Code")
-![jawaban](img/hasilkalkulator.png "Hasil")
+1. File baru tidak punya ACL spesifik. getfacl hanya menampilkan permission standar (owner, group, other).
+2. ls -l menampilkan permission dasar dengan tanda + di akhir. getfacl menampilkan detail ACL per user termasuk user:userA:r--.
+3. Direktori shared punya default ACL. File baru di dalamnya otomatis mewarisi default ACL tersebut.
 
 
 ## Praktikum 3A - Membuat dan Mengelola User
