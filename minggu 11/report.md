@@ -286,7 +286,7 @@ tiga file yang Anda kenali beserta alasannya.
     - /dev/shm, /dev/mqueue — shared memory, wajar world-writable.
     - /tmp/.X11-unix, /tmp/.font-unix, dll — socket runtime, normal.
    
-- Perlu diwaspadai:
+   - Perlu diwaspadai:
     - /run/screen — berisiko jika ada user tidak terpercaya di sistem.
     - /var/crash — seharusnya tidak world-writable, cek permission-nya:
 3. ![steps](img/lat9a3.png "Output konfigurasi")
