@@ -141,7 +141,7 @@ Langkah-langkah:
 ![Tampilan Cubic](img/pilihiso.png)
 
 4. Tunggu meng-extract iso
-![Tampilan Cubic](img/preparng.png)
+![Tampilan Cubic](img/preparing.png)
 
 5. Install semua aplikasi dan customisasi yang diinginkan
 ![Tampilan Cubic](img/instal.png)
