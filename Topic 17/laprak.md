@@ -135,7 +135,7 @@ Langkah-langkah:
 ![Tampilan desktop Ubuntu](img/mainscreenUbuntu.png)
 
 2. Buka Cubic
-![Tampilan Cubic](img/Cubic.png)
+![Tampilan Cubic](img/cubic.png)
 
 3. Masukkan iso yang ingin diremaster dan ubah nama hasil iso remaster (jika mau)
 ![Tampilan Cubic](img/pilihiso.png)
